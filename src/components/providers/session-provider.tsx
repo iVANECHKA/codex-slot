@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import type { SessionUser } from "@/lib/casino/types";
+import { getStaticSessionUser, staticLogout } from "@/lib/static-export-demo";
 
 interface SessionContextValue {
   user: SessionUser | null;
@@ -24,7 +25,7 @@ const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
 
 async function loadSession() {
   if (isStaticExport) {
-    return { user: null, mode: "demo" as const };
+    return { user: getStaticSessionUser(), mode: "demo" as const };
   }
 
   try {
@@ -56,7 +57,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const logout = useCallback(async () => {
-    if (!isStaticExport) {
+    if (isStaticExport) {
+      staticLogout();
+    } else {
       await fetch("/api/auth/logout", { method: "POST" });
     }
     await refresh();

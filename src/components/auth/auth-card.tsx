@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useSession } from "@/components/providers/session-provider";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
+import { staticLoginWithLogin, staticRegisterWithLogin } from "@/lib/static-export-demo";
 
 interface AuthResponse {
   error?: string;
@@ -28,9 +29,22 @@ export function AuthCard() {
     setError("");
 
     if (isStaticExport) {
-      setLoading(false);
-      setError("Backend API is unavailable on GitHub Pages.");
-      return;
+      try {
+        if (mode === "login") {
+          staticLoginWithLogin({ login, password });
+        } else {
+          staticRegisterWithLogin({ login, password, displayName });
+        }
+
+        await refresh();
+        router.push("/lobby");
+        router.refresh();
+        return;
+      } catch (error) {
+        setLoading(false);
+        setError(error instanceof Error ? error.message : "Request failed");
+        return;
+      }
     }
 
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";

@@ -7,6 +7,7 @@ import { Panel } from "@/components/ui/panel";
 import { useSession } from "@/components/providers/session-provider";
 import { formatCoins } from "@/lib/utils";
 import { multiplierAtElapsed } from "@/lib/casino/engines/crash-engine";
+import { staticCashoutCrash, staticStartCrashRound } from "@/lib/static-export-demo";
 
 interface CrashRoundResponse {
   round?: {
@@ -44,7 +45,23 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
     }
 
     if (isStaticExport) {
-      setStatus("Backend API is unavailable on GitHub Pages.");
+      try {
+        const payload = staticCashoutCrash({ game, roundId: targetRoundId });
+        if (!payload.result) {
+          throw new Error("Failed to cash out");
+        }
+
+        setStatus(
+          payload.result.busted
+            ? `Too late. Rocket crashed at x${payload.result.multiplier.toFixed(2)}.`
+            : `Cashed out ${formatCoins(payload.result.payout)} coins at x${payload.result.multiplier.toFixed(2)}.`,
+        );
+        setRound(null);
+        setMultiplier(1);
+        await refresh();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to cash out");
+      }
       return;
     }
 
@@ -86,7 +103,12 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
       }
 
       if (next >= round.bustPoint) {
-        setStatus(`Краш на x${round.bustPoint.toFixed(2)}`);
+        if (isStaticExport) {
+          void cashout(round.roundId);
+          return;
+        }
+
+        setStatus(`Crash at x${round.bustPoint.toFixed(2)}`);
         setRound(null);
       }
     }, 80);
@@ -103,7 +125,22 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
 
   async function start() {
     if (isStaticExport) {
-      setStatus("Backend API is unavailable on GitHub Pages.");
+      setLoading(true);
+      try {
+        const payload = staticStartCrashRound({ game, stake, autoCashout });
+        if (!payload.round) {
+          throw new Error("Failed to start Crash round");
+        }
+
+        setRound(payload.round);
+        setMultiplier(1);
+        setStatus(`Round started. Public seed: ${payload.round.roundId.slice(0, 8)}.`);
+        await refresh();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to start Crash round");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 

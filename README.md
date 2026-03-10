@@ -47,5 +47,5 @@ npm run build
 Notes:
 
 - Pages runs a static export, so backend API routes are excluded from the Pages build.
-- Interactive game requests that depend on `/api/*` are not available on Pages.
+- For Pages preview, the app automatically uses client-side demo storage so auth and games can be tested without server API.
 

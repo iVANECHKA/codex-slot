@@ -9,6 +9,7 @@ import { useSession } from "@/components/providers/session-provider";
 import { formatCoins } from "@/lib/utils";
 import BadMine from '../../../public/BadMine.png';
 import GoodMine from '../../../public/GoodMine.png';
+import { staticCashoutMines, staticRevealMinesTile, staticStartMinesRound } from "@/lib/static-export-demo";
 
 interface MinesRound {
   roundId: string;
@@ -56,7 +57,22 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
 
   async function start() {
     if (isStaticExport) {
-      setStatus("Backend API is unavailable on GitHub Pages.");
+      setLoading(true);
+      try {
+        const payload = staticStartMinesRound({ game, stake, minesCount });
+        if (!payload.round) {
+          throw new Error("Failed to start Mines round");
+        }
+
+        setRound(payload.round);
+        setRevealedMines([]);
+        setStatus("Field is ready. Every safe tile increases the cashout multiplier.");
+        await refresh();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to start Mines round");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -86,7 +102,31 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
     }
 
     if (isStaticExport) {
-      setStatus("Backend API is unavailable on GitHub Pages.");
+      try {
+        const payload = staticRevealMinesTile({ game, roundId: round.roundId, tileIndex });
+        if (!payload.result) {
+          throw new Error("Failed to reveal tile");
+        }
+
+        if (payload.result.hitMine) {
+          setStatus(`Boom. Round lost at x${payload.result.multiplier.toFixed(2)}.`);
+          setRevealedMines(payload.result.revealAllMines ?? []);
+          setRound(null);
+          return;
+        }
+
+        setRound((current) =>
+          current
+            ? {
+                ...current,
+                revealedSafeIndexes: payload.result?.revealedSafeIndexes ?? current.revealedSafeIndexes,
+              }
+            : current,
+        );
+        setStatus(`Safe. You can cash out at x${payload.result.multiplier.toFixed(2)}.`);
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to reveal tile");
+      }
       return;
     }
 
@@ -126,7 +166,19 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
     }
 
     if (isStaticExport) {
-      setStatus("Backend API is unavailable on GitHub Pages.");
+      try {
+        const payload = staticCashoutMines({ game, roundId: round.roundId });
+        if (!payload.result) {
+          throw new Error("Failed to cash out");
+        }
+
+        setStatus(`Cashed out ${formatCoins(payload.result.payout ?? 0)} coins at x${payload.result.multiplier.toFixed(2)}.`);
+        setRound(null);
+        setRevealedMines([]);
+        await refresh();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to cash out");
+      }
       return;
     }
 
@@ -176,7 +228,7 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
                       : "border-white/10 bg-white/5 text-zinc-400 hover:border-amber-200/30 hover:bg-amber-300/10 hover:text-white"
                 }`}
               >
-                {isMine ? <img src={BadMine.src}/> : isSafe ? <img src={GoodMine.src}/> : tileIndex + 1}
+                {isMine ? <img src={BadMine.src} /> : isSafe ? <img src={GoodMine.src} /> : tileIndex + 1}
               </button>
             );
           })}

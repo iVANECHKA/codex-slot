@@ -6,6 +6,7 @@ import { useSession } from "@/components/providers/session-provider";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { formatCoins } from "@/lib/utils";
+import { staticPlaySlot } from "@/lib/static-export-demo";
 
 interface SlotApiResult {
   result: {
@@ -39,7 +40,27 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
 
   async function play(endpoint: string) {
     if (isStaticExport) {
-      setSummary("Backend API is unavailable on GitHub Pages.");
+      setLoading(true);
+      try {
+        const payload = staticPlaySlot({
+          game,
+          stake,
+          bonus: endpoint.endsWith("/bonus"),
+        });
+
+        setGrid(payload.result.grid);
+        setLastPayout(payload.result.payout);
+        setSummary(
+          payload.result.payout > 0
+            ? `Win ${formatCoins(payload.result.payout)} coins${payload.result.bonusMultiplier ? `, bonus x${payload.result.bonusMultiplier}` : ""}`
+            : "No line win. Try another spin.",
+        );
+        await refresh();
+      } catch (error) {
+        setSummary(error instanceof Error ? error.message : "Action failed");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
