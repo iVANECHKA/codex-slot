@@ -20,13 +20,26 @@ interface SessionContextValue {
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
 
 async function loadSession() {
-  const response = await fetch("/api/me", { cache: "no-store" });
-  return (await response.json()) as {
-    user: SessionUser | null;
-    mode: "demo" | "supabase";
-  };
+  if (isStaticExport) {
+    return { user: null, mode: "demo" as const };
+  }
+
+  try {
+    const response = await fetch("/api/me", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Session request failed");
+    }
+
+    return (await response.json()) as {
+      user: SessionUser | null;
+      mode: "demo" | "supabase";
+    };
+  } catch {
+    return { user: null, mode: "demo" as const };
+  }
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
@@ -43,7 +56,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    if (!isStaticExport) {
+      await fetch("/api/auth/logout", { method: "POST" });
+    }
     await refresh();
   }, [refresh]);
 

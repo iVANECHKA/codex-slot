@@ -38,3 +38,14 @@ npm run test
 npm run build
 ```
 
+## Deploy to GitHub Pages
+
+- A workflow is provided in `.github/workflows/deploy-pages.yml`.
+- In repository settings, set **Pages -> Source** to **GitHub Actions**.
+- Push to `main` to trigger deployment.
+
+Notes:
+
+- Pages runs a static export, so backend API routes are excluded from the Pages build.
+- Interactive game requests that depend on `/api/*` are not available on Pages.
+

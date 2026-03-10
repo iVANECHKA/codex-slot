@@ -26,6 +26,8 @@ interface CrashRoundResponse {
   error?: string;
 }
 
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
 export function CrashStudio({ game }: { game: CrashGameDefinition }) {
   const { user, refresh } = useSession();
   const [stake, setStake] = useState(20);
@@ -38,6 +40,11 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
   const cashout = useCallback(async (roundId?: string) => {
     const targetRoundId = roundId ?? round?.roundId;
     if (!targetRoundId) {
+      return;
+    }
+
+    if (isStaticExport) {
+      setStatus("Backend API is unavailable on GitHub Pages.");
       return;
     }
 
@@ -95,6 +102,11 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
   }, [multiplier, round]);
 
   async function start() {
+    if (isStaticExport) {
+      setStatus("Backend API is unavailable on GitHub Pages.");
+      return;
+    }
+
     setLoading(true);
     const response = await fetch("/api/games/crash/start", {
       method: "POST",

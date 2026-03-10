@@ -31,6 +31,8 @@ interface MinesResponse {
   error?: string;
 }
 
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
 export function MinesStudio({ game }: { game: MinesGameDefinition }) {
   const { user, refresh } = useSession();
   const [stake, setStake] = useState(20);
@@ -53,6 +55,11 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
   }, [game.config.houseEdge, round]);
 
   async function start() {
+    if (isStaticExport) {
+      setStatus("Backend API is unavailable on GitHub Pages.");
+      return;
+    }
+
     setLoading(true);
     const response = await fetch("/api/games/mines/start", {
       method: "POST",
@@ -75,6 +82,11 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
 
   async function reveal(tileIndex: number) {
     if (!round) {
+      return;
+    }
+
+    if (isStaticExport) {
+      setStatus("Backend API is unavailable on GitHub Pages.");
       return;
     }
 
@@ -110,6 +122,11 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
 
   async function cashout() {
     if (!round) {
+      return;
+    }
+
+    if (isStaticExport) {
+      setStatus("Backend API is unavailable on GitHub Pages.");
       return;
     }
 

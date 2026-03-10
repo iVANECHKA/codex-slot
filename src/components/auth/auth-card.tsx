@@ -11,6 +11,8 @@ interface AuthResponse {
   error?: string;
 }
 
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
 export function AuthCard() {
   const router = useRouter();
   const { refresh } = useSession();
@@ -24,6 +26,12 @@ export function AuthCard() {
   async function submit() {
     setLoading(true);
     setError("");
+
+    if (isStaticExport) {
+      setLoading(false);
+      setError("Backend API is unavailable on GitHub Pages.");
+      return;
+    }
 
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
     const response = await fetch(endpoint, {

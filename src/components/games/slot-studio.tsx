@@ -19,6 +19,8 @@ interface SlotApiResult {
   error?: string;
 }
 
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
 function getSymbolLabel(game: SlotGameDefinition, code: string) {
   return game.config.symbols.find((symbol) => symbol.code === code)?.label ?? code;
 }
@@ -36,6 +38,11 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
   const lines = useMemo(() => game.config.paylines.length, [game.config.paylines.length]);
 
   async function play(endpoint: string) {
+    if (isStaticExport) {
+      setSummary("Backend API is unavailable on GitHub Pages.");
+      return;
+    }
+
     setLoading(true);
     const response = await fetch(endpoint, {
       method: "POST",

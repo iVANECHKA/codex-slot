@@ -4,7 +4,11 @@ import { MinesStudio } from "@/components/games/mines-studio";
 import { SlotStudio } from "@/components/games/slot-studio";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
-import { getGameBySlug } from "@/lib/casino/catalog";
+import { gameCatalog, getGameBySlug } from "@/lib/casino/catalog";
+
+export function generateStaticParams() {
+  return gameCatalog.map((game) => ({ slug: game.slug }));
+}
 
 export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -33,3 +37,4 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     </div>
   );
 }
+
