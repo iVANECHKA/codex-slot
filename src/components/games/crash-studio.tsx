@@ -12,6 +12,7 @@ import {
   multiplierAtElapsed,
 } from "@/lib/casino/engines/crash-engine";
 import { staticCashoutCrash, staticStartCrashRound } from "@/lib/static-export-demo";
+import Jetpack from "../../../public/jetpack.png"
 
 interface CrashRoundResponse {
   round?: {
@@ -45,13 +46,13 @@ function clamp(value: number, min: number, max: number) {
 export function CrashStudio({ game }: { game: CrashGameDefinition }) {
   const { user, refresh } = useSession();
   const [stakeInput, setStakeInput] = useState("20");
-  const [autoCashout, setAutoCashout] = useState(2);
+  const [autoCashoutInput, setAutoCashoutInput] = useState("2");
   const [round, setRound] = useState<CrashRoundResponse["round"] | null>(null);
   const [multiplier, setMultiplier] = useState(1);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [lastPayout, setLastPayout] = useState<number | null>(null);
   const [lockedCashout, setLockedCashout] = useState<LockedCashout | null>(null);
-  const [status, setStatus] = useState("Start a new crash round.");
+  const [status, setStatus] = useState("Начало нового раунда");
   const [loading, setLoading] = useState(false);
 
   const cashout = useCallback(async (roundId?: string, options?: { keepFlight?: boolean }) => {
@@ -64,7 +65,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
       try {
         const payload = staticCashoutCrash({ game, roundId: targetRoundId });
         if (!payload.result) {
-          throw new Error("Failed to cash out");
+          throw new Error("Не получилось вывести");
         }
 
         if (options?.keepFlight) {
@@ -72,15 +73,15 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
             payout: payload.result.payout,
             multiplier: payload.result.multiplier,
           });
-          setStatus(`Auto cashout locked at x${payload.result.multiplier.toFixed(2)}. Flight continues.`);
+          setStatus(`Автовывод сработал на x${payload.result.multiplier.toFixed(2)}. Полет продолжается.`);
           await refresh();
           return;
         }
 
         setStatus(
           payload.result.busted
-            ? `Too late. Crash at x${payload.result.multiplier.toFixed(2)}.`
-            : `Cashout ${formatCoins(payload.result.payout)} coins at x${payload.result.multiplier.toFixed(2)}.`,
+            ? `Слишком поздно. Крашнулось на x${payload.result.multiplier.toFixed(2)}.`
+            : `Вывод ${formatCoins(payload.result.payout)} монет на x${payload.result.multiplier.toFixed(2)}.`,
         );
         setRound(null);
         setMultiplier(payload.result.multiplier);
@@ -89,7 +90,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
         setElapsedMs(0);
         await refresh();
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : "Failed to cash out");
+        setStatus(error instanceof Error ? error.message : "Не получилось вывести");
       }
       return;
     }
@@ -102,7 +103,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
     const payload = (await response.json()) as CrashRoundResponse;
 
     if (!response.ok || !payload.result) {
-      setStatus(payload.error ?? "Failed to cash out the stake");
+      setStatus(payload.error ?? "Не получилось забрать ставку");
       return;
     }
 
@@ -111,15 +112,15 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
         payout: payload.result.payout,
         multiplier: payload.result.multiplier,
       });
-      setStatus(`Auto cashout locked at x${payload.result.multiplier.toFixed(2)}. Flight continues.`);
+      setStatus(`Автовывод сработал на x${payload.result.multiplier.toFixed(2)}. Полёт продолжается.`);
       await refresh();
       return;
     }
 
     setStatus(
       payload.result.busted
-        ? `Too late. Crash at x${payload.result.multiplier.toFixed(2)}.`
-        : `Cashout ${formatCoins(payload.result.payout)} coins at x${payload.result.multiplier.toFixed(2)}.`,
+        ? `Сликшом поздно. Крашнулось на x${payload.result.multiplier.toFixed(2)}.`
+        : `Вывод ${formatCoins(payload.result.payout)} монет на x${payload.result.multiplier.toFixed(2)}.`,
     );
     setRound(null);
     setMultiplier(payload.result.multiplier);
@@ -163,8 +164,8 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
 
         setStatus(
           lockedCashout
-            ? `Crash at x${round.bustPoint.toFixed(2)}. Auto cashout was secured at x${lockedCashout.multiplier.toFixed(2)}.`
-            : `Crash at x${round.bustPoint.toFixed(2)}.`,
+            ? `Крашнулось на x${round.bustPoint.toFixed(2)}. Автовывод сработал на x${lockedCashout.multiplier.toFixed(2)}.`
+            : `Крашнулось на x${round.bustPoint.toFixed(2)}.`,
         );
         setRound(null);
         setMultiplier(round.bustPoint);
@@ -241,10 +242,17 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
       return;
     }
 
+    const normalizedAutoCashout = autoCashoutInput.replace(",", ".");
+    const parsedAutoCashout = Number(normalizedAutoCashout);
+    if (!Number.isFinite(parsedAutoCashout) || parsedAutoCashout < 1.1) {
+      setStatus("Auto cashout must be at least 1.1.");
+      return;
+    }
+
     if (isStaticExport) {
       setLoading(true);
       try {
-        const payload = staticStartCrashRound({ game, stake: parsedStake, autoCashout });
+        const payload = staticStartCrashRound({ game, stake: parsedStake, autoCashout: parsedAutoCashout });
         if (!payload.round) {
           throw new Error("Failed to start crash round");
         }
@@ -254,7 +262,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
         setElapsedMs(0);
         setLastPayout(null);
         setLockedCashout(null);
-        setStatus(`Round started. Public seed: ${payload.round.roundId.slice(0, 8)}.`);
+        setStatus(`Раунд начался. Public seed: ${payload.round.roundId.slice(0, 8)}.`);
         await refresh();
       } catch (error) {
         setStatus(error instanceof Error ? error.message : "Failed to start crash round");
@@ -268,7 +276,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
     const response = await fetch("/api/games/crash/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: game.slug, stake: parsedStake, autoCashout }),
+      body: JSON.stringify({ slug: game.slug, stake: parsedStake, autoCashout: parsedAutoCashout }),
     });
     const payload = (await response.json()) as CrashRoundResponse;
     setLoading(false);
@@ -283,7 +291,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
     setElapsedMs(0);
     setLastPayout(null);
     setLockedCashout(null);
-    setStatus(`Round started. Public seed: ${payload.round.roundId.slice(0, 8)}.`);
+    setStatus(`Раунд начался. Public seed: ${payload.round.roundId.slice(0, 8)}.`);
     await refresh();
   }
 
@@ -311,15 +319,14 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
           />
 
           <div
-            className="absolute z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/10 text-xl shadow-[0_12px_36px_rgba(0,0,0,0.35)] transition-all duration-100"
+            className="absolute z-10 flex h-11 w-11 items-center justify-center transition-all duration-100"
             style={{
               left: pilotPosition.left,
               bottom: pilotPosition.bottom,
               transform: `translate(-50%, 50%) rotate(${pilotPosition.rotation.toFixed(1)}deg)`,
             }}
           >
-            {/* Replace this avatar with your own image later. */}
-            <span className="select-none text-xs font-bold">P</span>
+            <img src={Jetpack.src} alt="Jetpack" />
           </div>
 
           <div className="flex min-h-80 flex-col items-center justify-center text-center">
@@ -381,10 +388,21 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
           <input
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none"
             type="number"
-            value={autoCashout}
+            value={autoCashoutInput}
             step="0.1"
             min="1.1"
-            onChange={(event) => setAutoCashout(Number(event.target.value))}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              if (nextValue === "") {
+                setAutoCashoutInput("");
+                return;
+              }
+              const normalized = nextValue.replace(",", ".");
+              if (!/^\d*\.?\d*$/.test(normalized)) {
+                return;
+              }
+              setAutoCashoutInput(normalized);
+            }}
           />
         </label>
 
