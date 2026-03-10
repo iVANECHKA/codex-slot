@@ -7,7 +7,8 @@ import { Panel } from "@/components/ui/panel";
 import { calculateMinesMultiplier } from "@/lib/casino/engines/mines-engine";
 import { useSession } from "@/components/providers/session-provider";
 import { formatCoins } from "@/lib/utils";
-import ExplodeIcon from '../../../public/explode.png';
+import BadMine from '../../../public/BadMine.png';
+import GoodMine from '../../../public/GoodMine.png';
 
 interface MinesRound {
   roundId: string;
@@ -90,7 +91,7 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
     }
 
     if (payload.result.hitMine) {
-      setStatus(`Мина сработала. Раунд проигран на x${payload.result.multiplier.toFixed(2)}.`);
+      setStatus(`Тебя наебали на 500 рубасов. Раунд проигран на x${payload.result.multiplier.toFixed(2)}.`);
       setRevealedMines(payload.result.revealAllMines ?? []);
       setRound(null);
       return;
@@ -136,7 +137,7 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
     <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <Panel className="space-y-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Поле Mines</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Поле шавермы</p>
           <h2 className="font-display text-4xl">{game.title}</h2>
         </div>
 
@@ -158,7 +159,7 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
                       : "border-white/10 bg-white/5 text-zinc-400 hover:border-amber-200/30 hover:bg-amber-300/10 hover:text-white"
                 }`}
               >
-                {isMine ? <img src={ExplodeIcon.src}/> : isSafe ? "БЕЗ" : tileIndex + 1}
+                {isMine ? <img src={BadMine.src}/> : isSafe ? <img src={GoodMine.src}/> : tileIndex + 1}
               </button>
             );
           })}
