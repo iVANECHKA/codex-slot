@@ -28,7 +28,7 @@ function getSymbolLabel(game: SlotGameDefinition, code: string) {
 
 export function SlotStudio({ game }: { game: SlotGameDefinition }) {
   const { user, refresh } = useSession();
-  const [stake, setStake] = useState(20);
+  const [stakeInput, setStakeInput] = useState("20");
   const [grid, setGrid] = useState<string[][]>(() =>
     Array.from({ length: game.config.rows }, () => Array.from({ length: 5 }, () => "A")),
   );
@@ -39,12 +39,18 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
   const lines = useMemo(() => game.config.paylines.length, [game.config.paylines.length]);
 
   async function play(endpoint: string) {
+    const parsedStake = Number(stakeInput);
+    if (!Number.isFinite(parsedStake) || parsedStake < game.config.minBet || parsedStake > game.config.maxBet) {
+      setSummary(`Ставка должна быть от ${game.config.minBet} до ${game.config.maxBet}.`);
+      return;
+    }
+
     if (isStaticExport) {
       setLoading(true);
       try {
         const payload = staticPlaySlot({
           game,
-          stake,
+          stake: parsedStake,
           bonus: endpoint.endsWith("/bonus"),
         });
 
@@ -68,7 +74,7 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: game.slug, stake }),
+      body: JSON.stringify({ slug: game.slug, stake: parsedStake }),
     });
     const payload = (await response.json()) as SlotApiResult;
     setLoading(false);
@@ -101,18 +107,18 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
           </div>
         </div>
 
-        <div className="grid gap-3 rounded-[28px] border border-white/10 bg-black/30 p-4 sm:grid-cols-5">
+        <div className="grid grid-cols-5 gap-2 rounded-[28px] border border-white/10 bg-black/30 p-2 sm:gap-3 sm:p-4">
           {grid[0]?.map((_, reelIndex) => (
-            <div key={reelIndex} className="grid gap-3">
+            <div key={reelIndex} className="grid gap-2 sm:gap-3">
               {grid.map((row, rowIndex) => {
                 const code = row[reelIndex];
                 const symbol = game.config.symbols.find((item) => item.code === code);
                 return (
                   <div
                     key={`${reelIndex}-${rowIndex}`}
-                    className={`flex aspect-square items-center justify-center rounded-[24px] border border-white/10 bg-gradient-to-br ${symbol?.accent ?? "from-slate-700 to-slate-900"} text-center text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]`}
+                    className={`flex aspect-square items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br ${symbol?.accent ?? "from-slate-700 to-slate-900"} p-1 text-center text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:rounded-[24px]`}
                   >
-                    <span className="font-display text-2xl uppercase tracking-[0.18em]">{getSymbolLabel(game, code)}</span>
+                    <span className="font-display text-sm uppercase tracking-[0.12em] sm:text-2xl sm:tracking-[0.18em]">{getSymbolLabel(game, code)}</span>
                   </div>
                 );
               })}
@@ -139,15 +145,28 @@ export function SlotStudio({ game }: { game: SlotGameDefinition }) {
             type="number"
             min={game.config.minBet}
             max={game.config.maxBet}
-            value={stake}
-            onChange={(event) => setStake(Number(event.target.value))}
+            value={stakeInput}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              if (nextValue === "") {
+                setStakeInput("");
+                return;
+              }
+
+              const parsed = Number(nextValue);
+              if (!Number.isFinite(parsed)) {
+                return;
+              }
+
+              setStakeInput(String(parsed));
+            }}
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-amber-300/50"
           />
         </label>
 
         <div className="grid grid-cols-3 gap-2">
           {[10, 20, 50].map((amount) => (
-            <Button key={amount} variant="secondary" onClick={() => setStake(amount)}>
+            <Button key={amount} variant="secondary" onClick={() => setStakeInput(String(amount))}>
               {amount}
             </Button>
           ))}

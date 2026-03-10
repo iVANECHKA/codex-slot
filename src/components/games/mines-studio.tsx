@@ -36,7 +36,7 @@ const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
 
 export function MinesStudio({ game }: { game: MinesGameDefinition }) {
   const { user, refresh } = useSession();
-  const [stake, setStake] = useState(20);
+  const [stakeInput, setStakeInput] = useState("20");
   const [minesCount, setMinesCount] = useState(5);
   const [round, setRound] = useState<MinesRound | null>(null);
   const [revealedMines, setRevealedMines] = useState<number[]>([]);
@@ -56,10 +56,15 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
   }, [game.config.houseEdge, round]);
 
   async function start() {
+    const parsedStake = Number(stakeInput);
+    if (!Number.isFinite(parsedStake) || parsedStake <= 0) {
+      setStatus("Ставка должна быть больше 0.");
+      return;
+    }
     if (isStaticExport) {
       setLoading(true);
       try {
-        const payload = staticStartMinesRound({ game, stake, minesCount });
+        const payload = staticStartMinesRound({ game, stake: parsedStake, minesCount });
         if (!payload.round) {
           throw new Error("Failed to start Mines round");
         }
@@ -80,7 +85,7 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
     const response = await fetch("/api/games/mines/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: game.slug, stake, minesCount }),
+      body: JSON.stringify({ slug: game.slug, stake: parsedStake, minesCount }),
     });
     const payload = (await response.json()) as MinesResponse;
     setLoading(false);
@@ -246,7 +251,18 @@ export function MinesStudio({ game }: { game: MinesGameDefinition }) {
 
         <label className="block space-y-2 text-sm text-zinc-300">
           <span>Ставка</span>
-          <input className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none" type="number" value={stake} onChange={(event) => setStake(Number(event.target.value))} />
+          <input className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none" type="number" value={stakeInput} onChange={(event) => {
+            const nextValue = event.target.value;
+            if (nextValue === "") {
+              setStakeInput("");
+              return;
+            }
+            const parsed = Number(nextValue);
+            if (!Number.isFinite(parsed)) {
+              return;
+            }
+            setStakeInput(String(parsed));
+          }} />
         </label>
         <label className="block space-y-2 text-sm text-zinc-300">
           <span>Количество мин</span>

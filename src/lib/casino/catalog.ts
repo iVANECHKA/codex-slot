@@ -1,4 +1,4 @@
-import type { GameDefinition, SlotGameDefinition, SlotMathModel } from "@/lib/casino/types";
+﻿import type { GameDefinition, SlotGameDefinition, SlotMathModel } from "@/lib/casino/types";
 
 const paylines = [
   [0, 0, 0, 0, 0],
@@ -119,11 +119,11 @@ export const gameCatalog: GameDefinition[] = [
     kind: "crash",
     config: {
       type: "crash",
-      houseEdge: 0.04,
-      growthFactor: 0.82,
+      houseEdge: 0.03,
+      growthFactor: 0.2,
       minBet: 10,
       maxBet: 500,
-      maxMultiplier: 250,
+      maxMultiplier: 100,
     },
   },
   {
