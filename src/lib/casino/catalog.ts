@@ -44,7 +44,7 @@ function buildSlot(config: SlotOverrides): SlotGameDefinition {
       rtpTarget: 96.1,
       volatility: "high",
       minBet: 10,
-      maxBet: 500,
+      maxBet: 10000000000000000,
       bonusBuy: {
         featureKey: "freespins",
         priceMultiplier: 80,
@@ -137,7 +137,7 @@ export const gameCatalog: GameDefinition[] = [
       houseEdge: 0.03,
       growthFactor: 0.2,
       minBet: 10,
-      maxBet: 500,
+      maxBet: 10000000000000000,
       maxMultiplier: 100,
     },
   },
@@ -158,7 +158,7 @@ export const gameCatalog: GameDefinition[] = [
       maxMines: 12,
       houseEdge: 0.03,
       minBet: 10,
-      maxBet: 500,
+      maxBet: 10000000000000000,
     },
   },
 ];
