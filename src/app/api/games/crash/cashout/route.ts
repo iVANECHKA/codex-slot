@@ -1,4 +1,4 @@
-import { fail, ok } from "@/lib/api";
+﻿import { fail, ok } from "@/lib/api";
 import { getGameBySlug } from "@/lib/casino/catalog";
 import { settleCrashCashout } from "@/lib/casino/engines/crash-engine";
 import { getRound, mutateBalance, requireCurrentUser, updateRound } from "@/lib/casino/repository";
@@ -11,16 +11,16 @@ export async function POST(request: Request) {
     const round = await getRound(payload.roundId);
 
     if (!round || round.userId !== user.id) {
-      return fail("Раунд не найден", 404);
+      return fail("Round not found", 404);
     }
 
     if (round.status !== "active") {
-      return fail("Раунд уже завершен", 400);
+      return fail("Round is already settled", 400);
     }
 
     const game = getGameBySlug(round.gameSlug);
     if (!game || game.kind !== "crash") {
-      return fail("Игра Crash не найдена", 404);
+      return fail("Crash game not found", 404);
     }
 
     const crashResult = settleCrashCashout({
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       bustPoint: Number(round.payload.bustPoint ?? 1),
       stake: round.betAmount,
       startedAt: String(round.payload.startedAt ?? round.createdAt),
+      targetMultiplier: payload.targetMultiplier,
     });
 
     let refreshedUser = user;
@@ -62,7 +63,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "Не удалось вывести выигрыш", 400);
+    return fail(error instanceof Error ? error.message : "Failed to cash out", 400);
   }
 }
-

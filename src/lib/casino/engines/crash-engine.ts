@@ -58,10 +58,27 @@ export function settleCrashCashout(input: {
   bustPoint: number;
   stake: number;
   startedAt: string;
+  targetMultiplier?: number;
 }) {
   const elapsed = Date.now() - new Date(input.startedAt).getTime();
   const currentMultiplier = multiplierAtElapsed(elapsed, input.game.config.growthFactor);
-  const cappedMultiplier = Math.min(currentMultiplier, input.bustPoint);
+  const requestedTarget =
+    typeof input.targetMultiplier === "number" && Number.isFinite(input.targetMultiplier)
+      ? Number(input.targetMultiplier.toFixed(2))
+      : null;
+
+  if (requestedTarget !== null) {
+    if (requestedTarget < 1) {
+      throw new Error("Invalid cashout multiplier");
+    }
+
+    if (currentMultiplier < requestedTarget) {
+      throw new Error("Too early for auto cashout");
+    }
+  }
+
+  const settlementMultiplier = requestedTarget ?? currentMultiplier;
+  const cappedMultiplier = Math.min(settlementMultiplier, input.bustPoint);
   const busted = cappedMultiplier >= input.bustPoint;
 
   return {

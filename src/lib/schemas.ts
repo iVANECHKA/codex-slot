@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const authPayloadSchema = z.object({
   login: z.string().min(3).max(24).regex(/^[a-zA-Z0-9_]+$/),
@@ -22,6 +22,7 @@ export const crashStartSchema = z.object({
 
 export const crashCashoutSchema = z.object({
   roundId: z.string().uuid(),
+  targetMultiplier: z.number().min(1.01).max(100).optional(),
 });
 
 export const minesStartSchema = z.object({
@@ -34,4 +35,3 @@ export const minesRevealSchema = z.object({
   roundId: z.string().uuid(),
   tileIndex: z.number().int().min(0).max(24),
 });
-
