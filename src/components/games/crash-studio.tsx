@@ -55,7 +55,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
   const [status, setStatus] = useState("Начало нового раунда");
   const [loading, setLoading] = useState(false);
 
-  const cashout = useCallback(async (roundId?: string, options?: { keepFlight?: boolean }) => {
+  const cashout = useCallback(async (roundId?: string, options?: { keepFlight?: boolean; targetMultiplier?: number }) => {
     const targetRoundId = roundId ?? round?.roundId;
     if (!targetRoundId) {
       return;
@@ -63,7 +63,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
 
     if (isStaticExport) {
       try {
-        const payload = staticCashoutCrash({ game, roundId: targetRoundId });
+        const payload = staticCashoutCrash({ game, roundId: targetRoundId, targetMultiplier: options?.targetMultiplier });
         if (!payload.result) {
           throw new Error("Не получилось вывести");
         }
@@ -151,7 +151,7 @@ export function CrashStudio({ game }: { game: CrashGameDefinition }) {
         next < round.bustPoint
       ) {
         autoCashoutRequested = true;
-        void cashout(round.roundId, { keepFlight: true });
+        void cashout(round.roundId, { keepFlight: true, targetMultiplier: round.autoCashout });
       }
 
       if (next >= round.bustPoint) {

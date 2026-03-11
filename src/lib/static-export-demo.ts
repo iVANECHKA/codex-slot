@@ -550,6 +550,7 @@ export function staticStartCrashRound(input: {
 export function staticCashoutCrash(input: {
   game: CrashGameDefinition;
   roundId: string;
+  targetMultiplier?: number;
 }) {
   const user = requireCurrentUserAccount();
   const rounds = getCrashRounds();
@@ -565,7 +566,23 @@ export function staticCashoutCrash(input: {
 
   const elapsed = Date.now() - new Date(round.startedAt).getTime();
   const currentMultiplier = multiplierAtElapsed(elapsed, input.game.config.growthFactor);
-  const cappedMultiplier = Math.min(currentMultiplier, round.bustPoint);
+  const requestedTarget =
+    typeof input.targetMultiplier === "number" && Number.isFinite(input.targetMultiplier)
+      ? Number(input.targetMultiplier.toFixed(2))
+      : null;
+
+  if (requestedTarget !== null) {
+    if (requestedTarget < 1) {
+      throw new Error("Некорректный коэффициент вывода");
+    }
+
+    if (currentMultiplier < requestedTarget) {
+      throw new Error("Слишком рано для автовывода");
+    }
+  }
+
+  const settlementMultiplier = requestedTarget ?? currentMultiplier;
+  const cappedMultiplier = Math.min(settlementMultiplier, round.bustPoint);
   const busted = cappedMultiplier >= round.bustPoint;
   const payout = busted ? 0 : Number((round.stake * cappedMultiplier).toFixed(2));
 
